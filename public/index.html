@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dhanno – Book Your Ride Instantly</title>
+  <meta name="description" content="Dhanno – Real-time ride booking. Sign in as customer or rider and get live map tracking, instant ride matching, and OTP verification." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- ════════════════════════════════════════════════ -->
+  <!--  LOGIN SCREEN                                    -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div id="loginScreen" class="screen login-screen">
+    <div class="login-bg-art"></div>
+    <div class="login-container">
+      <div class="login-brand">
+        <div class="brand-icon">🚖</div>
+        <h1 class="brand-name">Dhanno</h1>
+        <p class="brand-tagline">fast and safe.</p>
+      </div>
+
+      <div class="login-card glass-card">
+        <h2 class="login-title">Welcome 👋</h2>
+        <p class="login-sub">Enter your details to get started instantly.</p>
+
+        <div class="form-field">
+          <label for="name">
+            <span class="field-icon">📝</span> Name
+          </label>
+          <input id="name" type="text" placeholder="Your Name" autocomplete="name" />
+        </div>
+
+        <div class="form-field">
+          <label for="gender">
+            <span class="field-icon">⚧️</span> Gender
+          </label>
+          <select id="gender" class="route-input" style="background: rgba(255,255,255,0.05);">
+            <option value="" disabled selected>Select Gender</option>
+            <option value="male" style="color: black;">Male</option>
+            <option value="female" style="color: black;">Female</option>
+            <option value="other" style="color: black;">Other</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="profilePicture">
+            <span class="field-icon">📸</span> Profile Photo
+          </label>
+          <input id="profilePicture" type="file" accept="image/*" class="route-input" style="background: rgba(255,255,255,0.05); padding: 8px;" />
+        </div>
+
+        <div class="form-field">
+          <label for="phone">
+            <span class="field-icon">📱</span> Phone Number
+          </label>
+          <input id="phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel" />
+        </div>
+
+        <div class="form-field">
+          <label for="role">
+            <span class="field-icon">👤</span> I am a…
+          </label>
+          <div class="role-picker">
+            <label class="role-option" id="roleCustomerLabel">
+              <input type="radio" name="role" id="roleCustomer" value="customer" checked />
+              <div class="role-card">
+                <span class="role-emoji">🧑</span>
+                <span class="role-label">Customer</span>
+                <span class="role-desc">I want a ride</span>
+              </div>
+            </label>
+            <label class="role-option" id="roleRiderLabel">
+              <input type="radio" name="role" id="roleRider" value="rider" />
+              <div class="role-card">
+                <span class="role-emoji">🏍️</span>
+                <span class="role-label">Rider</span>
+                <span class="role-desc">I give rides</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="loginError" class="login-error hidden"></div>
+
+        <button id="signinBtn" class="btn btn-primary btn-lg btn-full">
+          <span id="signinBtnText">Sign In / Register</span>
+          <span id="signinBtnLoader" class="btn-loader hidden">⏳</span>
+        </button>
+
+        <p class="login-note">No password needed · Auto-registered on first login</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!--  DASHBOARD                                       -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div id="dashboardScreen" class="screen hidden">
+
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+      <div class="topnav-brand">
+        <span class="brand-icon-sm">🚖</span>
+        <span class="brand-name-sm">Dhanno</span>
+      </div>
+      <div class="topnav-center">
+        <div id="serverStatusBadge" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="statusText">Connecting…</span>
+        </div>
+      </div>
+      <div class="topnav-right">
+        <div class="user-pill">
+          <span id="userRoleIcon">🧑</span>
+          <span id="userPhoneNav"></span>
+        </div>
+        <button id="logoutBtn" class="btn btn-ghost btn-sm">Logout</button>
+      </div>
+    </nav>
+
+    <!-- Global Notification Bar -->
+    <div id="notifBar" class="notif-bar hidden">
+      <span id="notifText"></span>
+      <button onclick="document.getElementById('notifBar').classList.add('hidden')" class="notif-close">✕</button>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="dash-layout">
+
+      <!-- ── Left Sidebar ───────────────────────── -->
+      <aside class="sidebar">
+
+        <!-- ═══ CUSTOMER PANEL ═══ -->
+        <div id="customerPanel" class="hidden">
+          <button id="sosBtn" class="btn btn-danger btn-full" style="margin-bottom: 16px; font-weight: bold; letter-spacing: 1px;">🚨 SOS Emergency</button>
+
+          <!-- Booking Card -->
+          <div class="sidebar-card" id="bookingCard">
+            <div class="card-header">
+              <div class="card-header-icon bg-blue">📍</div>
+              <div>
+                <h3 class="card-title">Book a Ride</h3>
+                <p class="card-sub">Choose vehicle &amp; set locations</p>
+              </div>
+            </div>
+
+            <!-- Vehicle Selector -->
+            <div class="vehicle-grid" id="vehicleGrid">
+              <button class="vehicle-btn active" data-vehicle="bike">
+                <span class="veh-icon">🏍️</span>
+                <span class="veh-name">Bike</span>
+                <span class="veh-price">₹25+</span>
+              </button>
+              <button class="vehicle-btn" data-vehicle="auto">
+                <span class="veh-icon">🛺</span>
+                <span class="veh-name">Auto</span>
+                <span class="veh-price">₹30+</span>
+              </button>
+              <button class="vehicle-btn" data-vehicle="car">
+                <span class="veh-icon">🚗</span>
+                <span class="veh-name">Car</span>
+                <span class="veh-price">₹50+</span>
+              </button>
+              <button class="vehicle-btn" data-vehicle="cabEconomy">
+                <span class="veh-icon">🚕</span>
+                <span class="veh-name">Economy</span>
+                <span class="veh-price">₹50+</span>
+              </button>
+              <button class="vehicle-btn" data-vehicle="cabPremium">
+                <span class="veh-icon">🚙</span>
+                <span class="veh-name">Premium</span>
+                <span class="veh-price">₹70+</span>
+              </button>
+            </div>
+
+            <input type="hidden" id="selectedVehicle" value="bike" />
+
+            <!-- Location Inputs -->
+            <div class="route-inputs">
+              <div class="route-line">
+                <div class="route-dot route-dot-green"></div>
+                <div class="route-input-wrap">
+                  <input id="pickupAddress" class="route-input" placeholder="Pickup location" />
+                  <button id="useLocationBtn" class="use-loc-btn" title="Use current location">📍</button>
+                </div>
+              </div>
+              <div class="route-divider"></div>
+              <div class="route-line">
+                <div class="route-dot route-dot-red"></div>
+                <div class="route-input-wrap">
+                  <input id="dropAddress" class="route-input" placeholder="Drop location" />
+                </div>
+              </div>
+            </div>
+
+            <div class="route-inputs" style="margin-top: 12px;">
+              <div class="route-line">
+                <div class="route-dot" style="background:var(--blue)">₹</div>
+                <div class="route-input-wrap">
+                  <input id="customFareInput" type="number" class="route-input" placeholder="Offer your fare (₹) - Optional" />
+                </div>
+              </div>
+            </div>
+
+            <button id="customerBookBtn" class="btn btn-primary btn-full btn-lg" style="margin-top:16px">
+              <span>Book Ride</span>
+            </button>
+          </div>
+
+          <!-- Active Ride Card (hidden until ride booked) -->
+          <div id="activeRideCard" class="sidebar-card hidden">
+            <div class="card-header">
+              <div class="card-header-icon bg-orange">🚀</div>
+              <div>
+                <h3 class="card-title">Active Ride</h3>
+                <p id="activeRideStatus" class="card-sub status-searching">Searching for rider…</p>
+              </div>
+            </div>
+
+            <div class="ride-detail-rows" id="rideDetailRows"></div>
+
+            <div id="negotiateFareBlock" class="hidden" style="margin-bottom: 12px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+              <p style="margin: 0 0 8px 0; font-size: 0.9rem; color: #9ca3af;">Increase fare to get a rider faster</p>
+              <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="btn btn-secondary btn-sm increase-fare-btn" data-val="10">+₹10</button>
+                <button class="btn btn-secondary btn-sm increase-fare-btn" data-val="20">+₹20</button>
+                <button class="btn btn-secondary btn-sm increase-fare-btn" data-val="50">+₹50</button>
+              </div>
+            </div>
+
+            <div id="otpBlock" class="otp-block hidden">
+              <p class="otp-label">Share this OTP with your rider</p>
+              <div class="otp-value" id="otpValue">----</div>
+            </div>
+
+            <div id="riderInfoBlock" class="rider-found-card hidden" style="padding: 16px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+              <div class="rider-found-header" style="display: flex; align-items: center; gap: 12px;">
+                <img id="riderProfilePic" src="" alt="Profile" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #333;" />
+                <div>
+                  <p class="rider-found-title" id="riderFoundName" style="margin: 0; font-weight: 600; font-size: 1.1rem;"></p>
+                  <p id="riderFoundPhone" class="rider-found-phone" style="margin: 0; font-size: 0.9rem; color: #aaa;"></p>
+                </div>
+                <div style="margin-left: auto; background: var(--orange); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; color: white;">
+                  ★ <span id="riderFoundRating">5.0</span>
+                </div>
+              </div>
+              <p id="riderFoundBio" style="margin: 0; font-size: 0.85rem; color: #ccc; font-style: italic; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border-left: 3px solid var(--orange);"></p>
+            </div>
+
+            <div id="ratingBlock" class="hidden" style="margin-top: 16px; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; text-align: center;">
+              <h4 style="margin: 0 0 8px 0; font-size: 1rem;">Rate your ride</h4>
+              <div id="starRating" style="font-size: 2rem; cursor: pointer; color: #4b5563; margin-bottom: 12px; display: flex; justify-content: center; gap: 8px;">
+                <span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span>
+              </div>
+              <input type="hidden" id="ratingValue" value="0" />
+              <textarea id="ratingFeedback" placeholder="Leave some feedback..." style="width: 100%; height: 60px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 12px; font-family: inherit; font-size: 0.9rem; resize: none; box-sizing: border-box;"></textarea>
+              <button id="submitRatingBtn" class="btn btn-primary btn-full">Submit Rating</button>
+            </div>
+
+            <button id="cancelRideBtn" class="btn btn-danger btn-full" style="margin-top:14px">
+              Cancel Ride
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══ RIDER PANEL ═══ -->
+        <div id="riderPanel" class="hidden">
+          <div class="sidebar-card">
+            <div class="card-header">
+              <div class="card-header-icon bg-green">🏍️</div>
+              <div>
+                <h3 class="card-title">Rider Console</h3>
+                <p id="riderStatusText" class="card-sub">Go on duty to start receiving rides</p>
+              </div>
+            </div>
+
+            <!-- Rider Vehicle Selection -->
+            <div class="route-inputs" style="margin-bottom: 12px;">
+              <div class="route-line">
+                <div class="route-dot" style="background:var(--orange)"></div>
+                <div class="route-input-wrap">
+                  <select id="riderVehicleSelect" class="route-input" style="background: rgba(255,255,255,0.05); color: white;">
+                    <option value="bike" style="color: black;">🏍️ Bike</option>
+                    <option value="auto" style="color: black;">🛺 Auto</option>
+                    <option value="car" style="color: black;">🚗 Car</option>
+                    <option value="cabEconomy" style="color: black;">🚕 Economy</option>
+                    <option value="cabPremium" style="color: black;">🚙 Premium</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rider Manual Location -->
+            <div class="route-inputs" style="margin-bottom: 16px;">
+              <div class="route-line">
+                <div class="route-dot route-dot-green"></div>
+                <div class="route-input-wrap">
+                  <input id="riderCityInput" class="route-input" placeholder="Your current city/area (e.g. Baddi)" />
+                </div>
+              </div>
+            </div>
+
+            <button id="toggleDutyBtn" class="btn btn-primary btn-full btn-lg">Go On Duty</button>
+
+            <div id="onDutyStats" class="on-duty-stats hidden">
+              <div class="stat-pill stat-green">
+                <span class="stat-dot"></span> Live &amp; On Duty
+              </div>
+              <p class="stat-note" id="nearbyCount">0 customers nearby</p>
+            </div>
+          </div>
+
+          <!-- Ride Offers -->
+          <div id="rideOffersSection" class="hidden">
+            <div class="section-label">
+              <span class="pulse-dot"></span> Incoming Ride Requests
+            </div>
+            <div id="rideOffersList"></div>
+          </div>
+
+          <!-- Active Ride (rider side) -->
+          <div id="riderActiveRide" class="sidebar-card hidden">
+            <div class="card-header">
+              <div class="card-header-icon bg-orange">🚀</div>
+              <div>
+                <h3 class="card-title">Current Ride</h3>
+                <p id="riderCurrentStatus" class="card-sub">In progress</p>
+              </div>
+            </div>
+            <div id="riderRideDetails" class="ride-detail-rows"></div>
+            <div class="status-steps" id="riderStatusSteps">
+              <button id="arrivedBtn" class="btn btn-warning btn-full">🚗 Mark as Arrived</button>
+
+              <div id="riderOtpBlock" class="hidden" style="margin-top: 12px; margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">Enter OTP from customer to start ride</p>
+                <div style="display: flex; gap: 8px;">
+                  <input id="riderOtpInput" type="text" placeholder="----" style="flex: 1; text-align: center; font-size: 1.2rem; letter-spacing: 4px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; outline: none;" maxlength="4" />
+                  <button id="verifyOtpBtn" class="btn btn-primary">Verify</button>
+                </div>
+              </div>
+
+              <button id="completedBtn" class="btn btn-success btn-full" style="margin-top:8px">✅ Complete Ride</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ── Map Area ────────────────────────────── -->
+      <main class="map-area">
+        <!-- Map Stats Bar -->
+        <div class="map-stats-bar">
+          <div class="map-stat">
+            <span class="map-stat-icon">📍</span>
+            <div>
+              <span class="map-stat-label">Your Location <button id="editLocationBtn" style="background:none;border:none;cursor:pointer;padding:0 4px;font-size:0.9rem;" title="Set manually">✏️</button></span>
+              <span id="locationText" class="map-stat-value">Detecting…</span>
+            </div>
+          </div>
+          <div class="map-divider"></div>
+          <div class="map-stat">
+            <span class="map-stat-icon">🚗</span>
+            <div>
+              <span class="map-stat-label">Vehicle</span>
+              <span id="vehicleText" class="map-stat-value">–</span>
+            </div>
+          </div>
+          <div class="map-divider"></div>
+          <div class="map-stat">
+            <span class="map-stat-icon">📶</span>
+            <div>
+              <span class="map-stat-label">Status</span>
+              <span id="statusInfoText" class="map-stat-value">Not logged in</span>
+            </div>
+          </div>
+          <div class="map-divider"></div>
+          <div class="map-stat">
+            <span class="map-stat-icon">🏍️</span>
+            <div>
+              <span class="map-stat-label">Nearby Riders</span>
+              <span id="nearbyRidersCount" class="map-stat-value">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- The Map -->
+        <div style="position: relative; width: 100%; flex: 1;">
+          <div id="map" style="width: 100%; height: 100%;"></div>
+          
+          <!-- Google Maps Style Turn-by-Turn Banner -->
+          <div id="turnByTurnBanner" class="turn-banner hidden">
+            <div class="turn-icon" id="turnIcon">↗️</div>
+            <div class="turn-details">
+              <div class="turn-distance" id="turnDistance">In 100 m</div>
+              <div class="turn-instruction" id="turnInstruction">Turn right onto NH5</div>
+            </div>
+          </div>
+
+          <button id="compassBtn" class="compass-btn" title="Locate Me & Compass">
+             <span class="compass-arrow" id="compassArrow">🧭</span>
+          </button>
+        </div>
+
+        <!-- Live Ride Progress Overlay -->
+        <div id="rideProgressOverlay" class="ride-progress-overlay hidden">
+          <div class="ride-progress-card glass-card">
+            <div class="progress-header">
+              <span class="progress-icon">🚗</span>
+              <div>
+                <p class="progress-label">Live Ride Status</p>
+                <p id="progressStatusText" class="progress-status">In progress</p>
+              </div>
+            </div>
+            <div class="progress-steps">
+              <div class="step" id="step-searching">
+                <div class="step-circle step-done">🔍</div>
+                <span>Searching</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step" id="step-start">
+                <div class="step-circle" id="stepCircleStart">🏁</div>
+                <span>Accepted</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step" id="step-arrived">
+                <div class="step-circle" id="stepCircleArrived">🚗</div>
+                <span>Arrived</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step" id="step-started">
+                <div class="step-circle" id="stepCircleStarted">🚀</div>
+                <span>Started</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step" id="step-completed">
+                <div class="step-circle" id="stepCircleCompleted">✅</div>
+                <span>Done</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Giant Alarm Overlay (Hidden by default) -->
+  <div id="alarmOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.85); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white; text-align:center; animation: flashRed 1s infinite alternate;">
+    <h1 style="font-size: 4rem; margin-bottom: 10px;">🚨 ALARM 🚨</h1>
+    <h2 style="font-size: 2rem; margin-bottom: 30px;">Destination Approaching!</h2>
+    <p style="font-size: 1.2rem; margin-bottom: 40px; max-width: 80%;">Wake up! You are less than 5 minutes away from your drop location.</p>
+    <button id="stopAlarmBtn" style="padding: 15px 40px; font-size: 1.5rem; font-weight: bold; color: red; background: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">Stop Alarm</button>
+  </div>
+  <style>
+    @keyframes flashRed {
+      0% { background: rgba(255, 0, 0, 0.85); }
+      100% { background: rgba(200, 0, 0, 0.95); }
+    }
+  </style>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+  <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
