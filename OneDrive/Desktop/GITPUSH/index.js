@@ -1,4 +1,4 @@
-// main entry point for ayush14 package
+// main entry point for nodesmodule package
 module.exports = {
   version: "1.0.0",
   author: "AYUSH14",
