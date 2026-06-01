@@ -1,4 +1,4 @@
-// main entry point for nodesmodule package
+// main entry point for nodesimodule package
 module.exports = {
   version: "1.0.0",
   author: "AYUSH14",

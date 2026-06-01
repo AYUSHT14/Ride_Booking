@@ -1,4 +1,5 @@
-# nodesmodule
+# nodesimodule
+
 
 
 A premium comprehensive package containing TypeScript, React, Redux, GraphQL, and Zod boilerplate, utilities, assignments, and sample architectures for modern web development.
@@ -53,7 +54,7 @@ Here is a catalog of the modules included in this workspace:
 ### Installation
 You can install this package in your project using:
 ```bash
-npm install nodesmodule
+npm install nodesimodule
 ```
 
 ---

@@ -1,5 +1,5 @@
 {
-  "name": "nodesmodule",
+  "name": "nodesimodule",
   "version": "1.0.0",
   "description": "A collection of React, TypeScript, GraphQL, and state management utility components and assignment boilerplate including Book Store Management, Redux E-commerce, Zod validation forms, and real-time chat examples.",
   "main": "index.js",
