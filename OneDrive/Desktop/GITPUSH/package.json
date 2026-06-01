@@ -1,0 +1,28 @@
+{
+  "name": "ayush14",
+  "version": "1.0.0",
+  "description": "A collection of React, TypeScript, GraphQL, and state management utility components and assignment boilerplate including Book Store Management, Redux E-commerce, Zod validation forms, and real-time chat examples.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "graphql",
+    "redux",
+    "zod",
+    "assignments",
+    "boilerplate"
+  ],
+  "author": "AYUSH14 <ayushtandon014@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AYUSHT14/Ride_Booking.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AYUSHT14/Ride_Booking/issues"
+  },
+  "homepage": "https://github.com/AYUSHT14/Ride_Booking#readme"
+}
